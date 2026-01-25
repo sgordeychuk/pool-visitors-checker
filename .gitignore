@@ -1,0 +1,98 @@
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+*.env
+credentials.json
+*.pem
+*.key
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+# Python build directories (at root level only)
+/lib/
+/lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+celery.log
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# SvelteKit / Vite
+.svelte-kit/
+.vercel/
+.output/
+.netlify/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Docker
+docker-compose.override.yml
+
+# Logs
+*.log
+logs/
+
+# Database
+*.sqlite3
+*.db
+
+# Build outputs
+frontend/build/
+backend/build/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Claude/AI tools
+.claude/
+.playwright-mcp/
