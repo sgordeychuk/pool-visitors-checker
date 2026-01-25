@@ -2,6 +2,23 @@
 
 A full-stack web application for tracking and analyzing swimming pool visitor counts. Automatically scrapes visitor data from pool websites, stores historical records, and provides analytics with trend visualizations and heatmaps.
 
+## Screenshots
+
+### Dashboard
+Real-time visitor counts with today's trend chart and key statistics.
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+### Analytics
+Weekly heatmap visualization showing visitor patterns by day and hour, plus trend analysis.
+
+![Analytics](docs/screenshots/analytics.png)
+
+### Raw Data
+Browse and filter historical visitor records with pagination.
+
+![Raw Data](docs/screenshots/data.png)
+
 ## Features
 
 - **Automated Data Collection**: Scheduled web scraping using Selenium to capture visitor counts

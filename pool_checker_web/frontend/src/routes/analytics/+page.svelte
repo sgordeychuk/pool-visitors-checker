@@ -2,13 +2,15 @@
 	import { onMount } from 'svelte';
 	import { pools, selectedPool } from '$lib/stores/pools';
 	import { isAuthenticated } from '$lib/stores/auth';
-	import { api, type HeatmapData, type TrendData, type DailySummary } from '$lib/api';
+	import { api, type HeatmapData, type TrendData, type DailySummary, type WeekdayAverage } from '$lib/api';
 	import TrendChart from '$lib/components/charts/TrendChart.svelte';
 	import HeatmapChart from '$lib/components/charts/HeatmapChart.svelte';
+	import WeekdayComparisonChart from '$lib/components/charts/WeekdayComparisonChart.svelte';
 
 	let heatmapData: HeatmapData | null = null;
 	let trendData: TrendData | null = null;
 	let dailySummary: DailySummary[] = [];
+	let weekdayAverages: WeekdayAverage[] = [];
 	let peakHours: { peak_hour: number | null; quietest_hour: number | null; by_hour: any[] } | null = null;
 	let loading = true;
 	let trendPeriod: 'weekly' | 'monthly' = 'weekly';
@@ -21,11 +23,12 @@
 		if (!$selectedPool) return;
 		loading = true;
 		try {
-			[heatmapData, trendData, dailySummary, peakHours] = await Promise.all([
+			[heatmapData, trendData, dailySummary, peakHours, weekdayAverages] = await Promise.all([
 				api.getHeatmapData($selectedPool.id),
 				api.getTrends($selectedPool.id, trendPeriod),
 				api.getDailySummary($selectedPool.id),
-				api.getPeakHours($selectedPool.id)
+				api.getPeakHours($selectedPool.id),
+				api.getWeekdayAverages($selectedPool.id)
 			]);
 		} catch (error) {
 			console.error('Failed to load analytics:', error);
@@ -99,8 +102,17 @@
 			{#if heatmapData && heatmapData.data.length > 0}
 				<section class="card p-4 md:p-6">
 					<h2 class="h3 mb-4">Weekly Heatmap</h2>
-					<p class="text-sm opacity-75 mb-4">Average visitors by day and hour</p>
+					<p class="text-sm opacity-75 mb-4">Average visitors by day and hour (6 AM - 10 PM)</p>
 					<HeatmapChart data={heatmapData} />
+				</section>
+			{/if}
+
+			<!-- Weekday Comparison Chart -->
+			{#if weekdayAverages.length > 0}
+				<section class="card p-4 md:p-6">
+					<h2 class="h3 mb-2">Best Time to Visit</h2>
+					<p class="text-sm opacity-75 mb-4">Compare hourly averages by weekday - toggle days to find the best time</p>
+					<WeekdayComparisonChart data={weekdayAverages} />
 				</section>
 			{/if}
 
@@ -136,12 +148,14 @@
 
 			<!-- Hourly Distribution -->
 			{#if peakHours && peakHours.by_hour.length > 0}
+				{@const filteredHours = peakHours.by_hour.filter((h) => h.hour >= 6 && h.hour <= 22)}
 				<section class="card p-4 md:p-6">
 					<h2 class="h3 mb-4">Hourly Distribution</h2>
+					<p class="text-sm opacity-75 mb-4">Overall average visitors by hour (all days combined)</p>
 					<div class="h-64 md:h-80">
 						<TrendChart
-							labels={peakHours.by_hour.map((h) => formatHour(h.hour))}
-							data={peakHours.by_hour.map((h) => h.average)}
+							labels={filteredHours.map((h) => formatHour(h.hour))}
+							data={filteredHours.map((h) => h.average)}
 							label="Average Visitors"
 						/>
 					</div>

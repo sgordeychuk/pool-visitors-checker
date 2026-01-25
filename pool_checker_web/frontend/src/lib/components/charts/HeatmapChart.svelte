@@ -4,7 +4,7 @@
 	export let data: HeatmapData;
 
 	const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-	const hours = Array.from({ length: 18 }, (_, i) => i + 5); // 5 AM to 10 PM
+	const hours = Array.from({ length: 17 }, (_, i) => i + 6); // 6 AM to 10 PM (pool opens at 6 AM)
 
 	function getValue(weekday: string, hour: number): number | null {
 		const cell = data.data.find((c) => c.weekday === weekday && c.hour === hour);

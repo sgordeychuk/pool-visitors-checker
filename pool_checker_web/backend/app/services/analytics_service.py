@@ -13,11 +13,15 @@ from app.schemas.analytics import (
 
 
 class AnalyticsService:
+    # Pool opens at 6 AM - filter out earlier hours from all analytics
+    POOL_OPEN_HOUR = 6
+    POOL_CLOSE_HOUR = 22
+
     def __init__(self, db: Session):
         self.db = db
 
     def get_weekday_averages(self, pool_id: int) -> List[WeekdayAverage]:
-        """Get average visitor counts by weekday and hour."""
+        """Get average visitor counts by weekday and hour (during pool hours only)."""
         results = (
             self.db.query(
                 VisitorRecord.weekday,
@@ -25,7 +29,11 @@ class AnalyticsService:
                 func.avg(VisitorRecord.visitor_count).label('avg_visitors'),
                 func.count(VisitorRecord.id).label('sample_count')
             )
-            .filter(VisitorRecord.pool_id == pool_id)
+            .filter(
+                VisitorRecord.pool_id == pool_id,
+                extract('hour', VisitorRecord.timestamp) >= self.POOL_OPEN_HOUR,
+                extract('hour', VisitorRecord.timestamp) <= self.POOL_CLOSE_HOUR
+            )
             .group_by(VisitorRecord.weekday, extract('hour', VisitorRecord.timestamp))
             .order_by(VisitorRecord.weekday, 'hour')
             .all()
@@ -42,7 +50,7 @@ class AnalyticsService:
         ]
 
     def get_heatmap_data(self, pool_id: int) -> Optional[HeatmapData]:
-        """Get heatmap data (weekday x hour matrix)."""
+        """Get heatmap data (weekday x hour matrix) during pool hours only."""
         pool = self.db.query(Pool).filter(Pool.id == pool_id).first()
         if not pool:
             return None
@@ -53,7 +61,11 @@ class AnalyticsService:
                 extract('hour', VisitorRecord.timestamp).label('hour'),
                 func.avg(VisitorRecord.visitor_count).label('avg_visitors')
             )
-            .filter(VisitorRecord.pool_id == pool_id)
+            .filter(
+                VisitorRecord.pool_id == pool_id,
+                extract('hour', VisitorRecord.timestamp) >= self.POOL_OPEN_HOUR,
+                extract('hour', VisitorRecord.timestamp) <= self.POOL_CLOSE_HOUR
+            )
             .group_by(VisitorRecord.weekday, extract('hour', VisitorRecord.timestamp))
             .all()
         )
@@ -188,14 +200,18 @@ class AnalyticsService:
         )
 
     def get_peak_hours(self, pool_id: int, weekday: Optional[str] = None) -> dict:
-        """Get peak hours analysis."""
+        """Get peak hours analysis (during pool hours only)."""
         query = (
             self.db.query(
                 extract('hour', VisitorRecord.timestamp).label('hour'),
                 func.avg(VisitorRecord.visitor_count).label('avg_visitors'),
                 func.max(VisitorRecord.visitor_count).label('max_visitors')
             )
-            .filter(VisitorRecord.pool_id == pool_id)
+            .filter(
+                VisitorRecord.pool_id == pool_id,
+                extract('hour', VisitorRecord.timestamp) >= self.POOL_OPEN_HOUR,
+                extract('hour', VisitorRecord.timestamp) <= self.POOL_CLOSE_HOUR
+            )
         )
 
         if weekday:
@@ -239,7 +255,7 @@ class AnalyticsService:
         current_hour = now.hour
         current_minute = now.minute
 
-        # Query historical data for same weekday, only hours up to current hour
+        # Query historical data for same weekday, only hours from pool open to current hour
         results = (
             self.db.query(
                 func.avg(VisitorRecord.visitor_count).label('avg_visitors'),
@@ -250,6 +266,7 @@ class AnalyticsService:
             .filter(
                 VisitorRecord.pool_id == pool_id,
                 VisitorRecord.weekday == current_weekday,
+                extract('hour', VisitorRecord.timestamp) >= self.POOL_OPEN_HOUR,
                 extract('hour', VisitorRecord.timestamp) <= current_hour
             )
             .first()
