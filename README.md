@@ -1,6 +1,8 @@
 # Pool Visitor Tracker
 
-A full-stack web application for tracking and analyzing swimming pool visitor counts. Automatically scrapes visitor data from pool websites, stores historical records, and provides analytics with trend visualizations and heatmaps.
+I hate when it's too crowded at the pool, so I've built this app to monitor visitor counts in real-time and help me decide the best times to go for a swim :D 
+
+Automatically scrapes visitor data from pool websites, stores historical records, and provides analytics with trend visualizations and heatmaps, etc.
 
 ## Screenshots
 
