@@ -72,9 +72,5 @@
 			</button>
 		</form>
 
-		<p class="text-center text-sm opacity-75">
-			Don't have an account?
-			<a href="/register" class="anchor">Register</a>
-		</p>
 	</div>
 </div>

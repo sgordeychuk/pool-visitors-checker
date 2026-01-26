@@ -26,7 +26,7 @@
 		goto('/login');
 	}
 
-	$: publicRoutes = ['/login', '/register'];
+	$: publicRoutes = ['/login'];
 	$: isPublicRoute = publicRoutes.includes($page.url.pathname);
 
 	$: if (!$auth.loading && !$isAuthenticated && !isPublicRoute) {
