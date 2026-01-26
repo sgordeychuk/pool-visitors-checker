@@ -6,6 +6,8 @@
 	import TrendChart from '$lib/components/charts/TrendChart.svelte';
 	import HeatmapChart from '$lib/components/charts/HeatmapChart.svelte';
 	import WeekdayComparisonChart from '$lib/components/charts/WeekdayComparisonChart.svelte';
+	import { Card, Button, Badge, Select, PredictionCard } from '$clearlane';
+	import { getCrowdLevel } from '$styles/chart-colors';
 
 	let heatmapData: HeatmapData | null = null;
 	let trendData: TrendData | null = null;
@@ -50,90 +52,127 @@
 	function formatHour(hour: number): string {
 		return `${hour.toString().padStart(2, '0')}:00`;
 	}
+
+	// Find best time to swim
+	$: bestDay = weekdayAverages.length > 0
+		? weekdayAverages.reduce((best, current) =>
+			current.average_visitors < best.average_visitors ? current : best
+		)
+		: null;
+
+	$: bestTimeRecommendation = bestDay && peakHours && peakHours.quietest_hour !== null
+		? `${bestDay.weekday}s at ${formatHour(peakHours.quietest_hour)}`
+		: 'Analyzing patterns...';
+
+	$: poolOptions = $pools.pools.map(p => ({ value: String(p.id), label: p.name }));
+
+	let selectedPoolValue = '';
+	$: selectedPoolValue = String($pools.selectedPoolId);
+
+	function handlePoolChange(e: Event) {
+		const target = e.target as HTMLSelectElement;
+		if (target) {
+			pools.selectPool(Number(target.value));
+		}
+	}
 </script>
 
 <svelte:head>
-	<title>Analytics - Pool Visitor Tracker</title>
+	<title>Analytics - ClearLane</title>
 </svelte:head>
 
 {#if loading}
 	<div class="flex justify-center items-center h-64">
-		<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+		<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-cl-primary"></div>
 	</div>
 {:else}
-	<div class="space-y-8">
+	<div class="space-y-6">
+		<!-- Header -->
 		<header class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-			<h1 class="h1">Analytics</h1>
+			<h1 class="text-cl-h1 text-cl-text-primary">Analytics</h1>
 			{#if $pools.pools.length > 0}
-				<select
-					class="select w-full md:w-64"
-					value={$pools.selectedPoolId}
-					on:change={(e) => pools.selectPool(Number(e.currentTarget.value))}
-				>
-					{#each $pools.pools as pool}
-						<option value={pool.id}>{pool.name}</option>
-					{/each}
-				</select>
+				<div class="w-full md:w-64">
+					<Select
+						options={poolOptions}
+						value={selectedPoolValue}
+						on:change={handlePoolChange}
+					/>
+				</div>
 			{/if}
 		</header>
 
 		{#if $selectedPool}
+			<!-- Best Time to Swim Prediction -->
+			<PredictionCard
+				title="Best Time to Swim"
+				recommendation={bestTimeRecommendation}
+				crowdLevel="low"
+				subtitle="Based on historical patterns"
+				trendText={peakHours && peakHours.peak_hour !== null ? `Peak: ${formatHour(peakHours.peak_hour)}` : undefined}
+			/>
+
 			<!-- Peak Hours Summary -->
 			{#if peakHours}
 				<section class="grid grid-cols-1 md:grid-cols-2 gap-4">
-					<div class="card p-6 text-center">
-						<p class="text-sm opacity-75 mb-2">Peak Hour</p>
-						<p class="text-4xl font-bold text-error-500">
-							{peakHours.peak_hour !== null ? formatHour(peakHours.peak_hour) : '-'}
-						</p>
-						<p class="text-sm opacity-75 mt-2">Busiest time on average</p>
-					</div>
-					<div class="card p-6 text-center">
-						<p class="text-sm opacity-75 mb-2">Quietest Hour</p>
-						<p class="text-4xl font-bold text-success-500">
-							{peakHours.quietest_hour !== null ? formatHour(peakHours.quietest_hour) : '-'}
-						</p>
-						<p class="text-sm opacity-75 mt-2">Best time to visit</p>
-					</div>
+					<Card padding="lg">
+						<div class="text-center">
+							<p class="text-cl-label text-cl-text-muted mb-2">Peak Hour</p>
+							<p class="text-4xl font-bold text-cl-crowd-full">
+								{peakHours.peak_hour !== null ? formatHour(peakHours.peak_hour) : '-'}
+							</p>
+							<p class="text-cl-small text-cl-text-muted mt-2">Busiest time on average</p>
+						</div>
+					</Card>
+					<Card padding="lg">
+						<div class="text-center">
+							<p class="text-cl-label text-cl-text-muted mb-2">Quietest Hour</p>
+							<p class="text-4xl font-bold text-cl-crowd-low">
+								{peakHours.quietest_hour !== null ? formatHour(peakHours.quietest_hour) : '-'}
+							</p>
+							<p class="text-cl-small text-cl-text-muted mt-2">Best time to visit</p>
+						</div>
+					</Card>
 				</section>
 			{/if}
 
 			<!-- Heatmap -->
 			{#if heatmapData && heatmapData.data.length > 0}
-				<section class="card p-4 md:p-6">
-					<h2 class="h3 mb-4">Weekly Heatmap</h2>
-					<p class="text-sm opacity-75 mb-4">Average visitors by day and hour (6 AM - 10 PM)</p>
+				<Card padding="lg">
+					<h2 class="text-cl-h2 text-cl-text-primary mb-2">Weekly Crowd Density</h2>
+					<p class="text-cl-small text-cl-text-muted mb-4">Average visitors by day and hour (6 AM - 10 PM)</p>
 					<HeatmapChart data={heatmapData} />
-				</section>
+				</Card>
 			{/if}
 
 			<!-- Weekday Comparison Chart -->
 			{#if weekdayAverages.length > 0}
-				<section class="card p-4 md:p-6">
-					<h2 class="h3 mb-2">Best Time to Visit</h2>
-					<p class="text-sm opacity-75 mb-4">Compare hourly averages by weekday - toggle days to find the best time</p>
+				<Card padding="lg">
+					<h2 class="text-cl-h2 text-cl-text-primary mb-2">Best Time to Visit</h2>
+					<p class="text-cl-small text-cl-text-muted mb-4">Compare hourly averages by weekday - toggle days to find the best time</p>
 					<WeekdayComparisonChart data={weekdayAverages} />
-				</section>
+				</Card>
 			{/if}
 
 			<!-- Trend Chart -->
 			{#if trendData && trendData.data.length > 0}
-				<section class="card p-4 md:p-6">
+				<Card padding="lg">
 					<div class="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
-						<h2 class="h3">Visitor Trends</h2>
-						<div class="btn-group variant-ghost-surface">
-							<button
-								class:variant-filled-primary={trendPeriod === 'weekly'}
+						<h2 class="text-cl-h2 text-cl-text-primary">Visitor Trends</h2>
+						<div class="flex gap-2">
+							<Button
+								variant={trendPeriod === 'weekly' ? 'primary' : 'secondary'}
+								size="sm"
 								on:click={() => changeTrendPeriod('weekly')}
 							>
 								Weekly
-							</button>
-							<button
-								class:variant-filled-primary={trendPeriod === 'monthly'}
+							</Button>
+							<Button
+								variant={trendPeriod === 'monthly' ? 'primary' : 'secondary'}
+								size="sm"
 								on:click={() => changeTrendPeriod('monthly')}
 							>
 								Monthly
-							</button>
+							</Button>
 						</div>
 					</div>
 					<div class="h-64 md:h-80">
@@ -143,15 +182,15 @@
 							label="Average Visitors"
 						/>
 					</div>
-				</section>
+				</Card>
 			{/if}
 
 			<!-- Hourly Distribution -->
 			{#if peakHours && peakHours.by_hour.length > 0}
 				{@const filteredHours = peakHours.by_hour.filter((h) => h.hour >= 6 && h.hour <= 22)}
-				<section class="card p-4 md:p-6">
-					<h2 class="h3 mb-4">Hourly Distribution</h2>
-					<p class="text-sm opacity-75 mb-4">Overall average visitors by hour (all days combined)</p>
+				<Card padding="lg">
+					<h2 class="text-cl-h2 text-cl-text-primary mb-2">Average Daily Flow</h2>
+					<p class="text-cl-small text-cl-text-muted mb-4">Overall average visitors by hour (all days combined)</p>
 					<div class="h-64 md:h-80">
 						<TrendChart
 							labels={filteredHours.map((h) => formatHour(h.hour))}
@@ -159,43 +198,53 @@
 							label="Average Visitors"
 						/>
 					</div>
-				</section>
+				</Card>
 			{/if}
 
 			<!-- Daily Summary Table -->
 			{#if dailySummary.length > 0}
-				<section class="card p-4 md:p-6">
-					<h2 class="h3 mb-4">Daily Summary (Last 14 Days)</h2>
-					<div class="table-container">
-						<table class="table table-hover">
+				<Card padding="lg">
+					<h2 class="text-cl-h2 text-cl-text-primary mb-4">Daily Summary (Last 14 Days)</h2>
+					<div class="overflow-x-auto">
+						<table class="w-full text-left">
 							<thead>
-								<tr>
-									<th>Date</th>
-									<th class="text-right">Min</th>
-									<th class="text-right">Max</th>
-									<th class="text-right">Average</th>
-									<th class="text-right">Readings</th>
+								<tr class="border-b border-cl-border">
+									<th class="pb-3 text-cl-label text-cl-text-muted font-medium">Date</th>
+									<th class="pb-3 text-cl-label text-cl-text-muted font-medium text-right">Min</th>
+									<th class="pb-3 text-cl-label text-cl-text-muted font-medium text-right">Max</th>
+									<th class="pb-3 text-cl-label text-cl-text-muted font-medium text-right">Average</th>
+									<th class="pb-3 text-cl-label text-cl-text-muted font-medium text-right">Readings</th>
 								</tr>
 							</thead>
 							<tbody>
-								{#each dailySummary.slice(0, 14) as day}
-									<tr>
-										<td>{new Date(day.date).toLocaleDateString('de-CH', { weekday: 'short', month: 'short', day: 'numeric' })}</td>
-										<td class="text-right">{day.min_visitors}</td>
-										<td class="text-right">{day.max_visitors}</td>
-										<td class="text-right">{day.avg_visitors.toFixed(1)}</td>
-										<td class="text-right">{day.total_readings}</td>
+								{#each dailySummary.slice(0, 14) as day, i}
+									{@const avgNormalized = day.avg_visitors / 150}
+									{@const crowdLevel = getCrowdLevel(avgNormalized)}
+									<tr class="border-b border-cl-border-subtle hover:bg-cl-bg-muted transition-colors">
+										<td class="py-3 text-cl-body text-cl-text-primary">
+											{new Date(day.date).toLocaleDateString('de-CH', { weekday: 'short', month: 'short', day: 'numeric' })}
+										</td>
+										<td class="py-3 text-cl-body text-cl-crowd-low text-right">{day.min_visitors}</td>
+										<td class="py-3 text-cl-body text-cl-crowd-high text-right">{day.max_visitors}</td>
+										<td class="py-3 text-right">
+											<Badge variant={crowdLevel} size="sm">
+												{day.avg_visitors.toFixed(0)}
+											</Badge>
+										</td>
+										<td class="py-3 text-cl-body text-cl-text-muted text-right">{day.total_readings}</td>
 									</tr>
 								{/each}
 							</tbody>
 						</table>
 					</div>
-				</section>
+				</Card>
 			{/if}
 		{:else}
-			<div class="card p-8 text-center">
-				<p class="text-lg opacity-75">No pools configured yet.</p>
-			</div>
+			<Card padding="lg">
+				<div class="text-center py-8">
+					<p class="text-cl-body text-cl-text-muted">No pools configured yet.</p>
+				</div>
+			</Card>
 		{/if}
 	</div>
 {/if}

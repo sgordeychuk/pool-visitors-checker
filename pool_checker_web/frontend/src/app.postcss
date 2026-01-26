@@ -1,3 +1,9 @@
+/* Inter Font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ClearLane Design System Theme */
+@import './lib/styles/clearlane-theme.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,4 +11,46 @@
 html,
 body {
 	@apply h-full overflow-hidden;
+	font-family: var(--cl-font-family);
+	background-color: var(--cl-bg-base);
+	color: var(--cl-text-primary);
+}
+
+/* ClearLane Base Layer Utilities */
+@layer base {
+	/* Apply ClearLane typography defaults */
+	h1 {
+		@apply text-cl-h1 font-bold;
+	}
+
+	h2 {
+		@apply text-cl-h2 font-medium;
+	}
+
+	p {
+		@apply text-cl-body;
+	}
+}
+
+@layer components {
+	/* ClearLane Typography Component Classes */
+	.cl-heading-1 {
+		@apply text-cl-h1 font-bold text-cl-text-primary;
+	}
+
+	.cl-heading-2 {
+		@apply text-cl-h2 font-medium text-cl-text-primary;
+	}
+
+	.cl-body-text {
+		@apply text-cl-body text-cl-text-primary;
+	}
+
+	.cl-small-text {
+		@apply text-cl-small text-cl-text-secondary;
+	}
+
+	.cl-label-text {
+		@apply text-cl-label uppercase tracking-wide text-cl-text-muted;
+	}
 }

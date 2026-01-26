@@ -1,11 +1,14 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
+	import { Badge, Card } from '$clearlane';
+	import { getCrowdLevel, getCrowdColor } from '$styles/chart-colors';
 
 	export let poolName: string;
 	export let visitorCount: number;
 	export let timestamp: string;
 	export let weekday: string;
 	export let isSelected: boolean = false;
+	export let maxVisitors: number = 150;
 
 	const dispatch = createEventDispatcher();
 
@@ -13,38 +16,43 @@
 		return new Date(ts).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
 	}
 
-	function getStatusColor(count: number): string {
-		if (count < 50) return 'text-success-500';
-		if (count < 100) return 'text-warning-500';
-		return 'text-error-500';
-	}
+	$: normalized = Math.min(visitorCount / maxVisitors, 1);
+	$: crowdLevel = getCrowdLevel(normalized);
+	$: crowdColor = getCrowdColor(normalized);
 
-	function getStatusLabel(count: number): string {
-		if (count < 50) return 'Low';
-		if (count < 100) return 'Medium';
-		return 'Busy';
-	}
+	const statusLabels = {
+		low: 'Low',
+		moderate: 'Moderate',
+		high: 'Busy',
+		full: 'Very Busy'
+	};
 </script>
 
 <button
-	class="card p-4 w-full text-left transition-all hover:scale-[1.02] {isSelected
-		? 'ring-2 ring-primary-500'
-		: ''}"
+	class="w-full text-left transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-cl-primary focus:ring-offset-2 rounded-lg"
 	on:click={() => dispatch('click')}
 >
-	<div class="flex items-start justify-between">
-		<div>
-			<h3 class="font-semibold">{poolName}</h3>
-			<p class="text-sm opacity-75">{weekday}</p>
+	<Card
+		variant={isSelected ? 'elevated' : 'default'}
+		padding="lg"
+		class={isSelected ? 'ring-2 ring-cl-primary h-full' : 'h-full'}
+	>
+		<div class="flex items-start justify-between gap-2 mb-4">
+			<div class="min-w-0 flex-1">
+				<h3 class="font-semibold text-cl-text-primary text-base truncate">{poolName}</h3>
+				<p class="text-sm text-cl-text-muted">{weekday}</p>
+			</div>
+			<Badge variant={crowdLevel} size="sm" pill class="flex-shrink-0">
+				{statusLabels[crowdLevel]}
+			</Badge>
 		</div>
-		<span class="badge {getStatusColor(visitorCount)}">{getStatusLabel(visitorCount)}</span>
-	</div>
 
-	<div class="mt-4 flex items-end justify-between">
-		<div>
-			<p class="text-4xl font-bold {getStatusColor(visitorCount)}">{visitorCount}</p>
-			<p class="text-sm opacity-75">visitors</p>
+		<div class="flex items-end justify-between gap-2">
+			<div>
+				<p class="text-4xl font-bold leading-none" style="color: {crowdColor}">{visitorCount}</p>
+				<p class="text-sm text-cl-text-muted mt-1">visitors</p>
+			</div>
+			<p class="text-sm text-cl-text-muted">{formatTime(timestamp)}</p>
 		</div>
-		<p class="text-sm opacity-75">{formatTime(timestamp)}</p>
-	</div>
+	</Card>
 </button>
