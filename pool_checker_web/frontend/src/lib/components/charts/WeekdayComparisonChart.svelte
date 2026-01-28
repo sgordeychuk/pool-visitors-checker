@@ -31,6 +31,9 @@
 		Sunday: true
 	};
 
+	// Selection mode: 'all' shows everything, 'custom' allows individual selection
+	let selectionMode: 'all' | 'custom' = 'all';
+
 	// Hours from 6 AM to 10 PM (pool hours)
 	const hours = Array.from({ length: 17 }, (_, i) => i + 6);
 
@@ -46,7 +49,29 @@
 	}
 
 	function toggleDay(day: string) {
-		enabledDays[day] = !enabledDays[day];
+		if (selectionMode === 'all') {
+			// Exclusive select from initial state - show only clicked day
+			weekdays.forEach(d => {
+				enabledDays[d] = (d === day);
+			});
+			selectionMode = 'custom';
+		} else {
+			// Additive toggle in custom mode
+			enabledDays[day] = !enabledDays[day];
+
+			// Keep at least one day enabled
+			if (Object.values(enabledDays).filter(Boolean).length === 0) {
+				enabledDays[day] = true;
+			}
+		}
+		updateChart();
+	}
+
+	function showAllDays() {
+		weekdays.forEach(d => {
+			enabledDays[d] = true;
+		});
+		selectionMode = 'all';
 		updateChart();
 	}
 
@@ -176,7 +201,7 @@
 
 <div class="space-y-4">
 	<!-- Day Toggles -->
-	<div class="flex flex-wrap gap-2 justify-center">
+	<div class="flex flex-wrap gap-2 justify-center items-center">
 		{#each weekdays as day}
 			<button
 				class="btn btn-sm {enabledDays[day] ? '' : 'opacity-40'}"
@@ -188,6 +213,12 @@
 				{day.slice(0, 3)}
 			</button>
 		{/each}
+
+		{#if selectionMode === 'custom'}
+			<button class="btn btn-sm variant-soft-surface ml-2" on:click={showAllDays}>
+				All
+			</button>
+		{/if}
 	</div>
 
 	<!-- Chart -->
